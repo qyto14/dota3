@@ -1,0 +1,218 @@
+/* ============ DOTA 3 — каменный-золотой HUD в духе классической MOBA ============ */
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:100%; height:100%; overflow:hidden; background:#07090d; }
+body { font-family:'Segoe UI', Roboto, Arial, sans-serif; color:#e8e2d2; user-select:none; }
+canvas.game { display:block; position:fixed; inset:0; }
+#vignette { position:fixed; inset:0; z-index:5; pointer-events:none;
+  background:radial-gradient(ellipse at center, transparent 50%, rgba(4,6,10,.5) 100%); }
+
+/* каменная панель, база для всех плит (без копейрайт-артов — чистый CSS) */
+.stone, #bottombar, #topbar, #kda, #shop, #mmwrap {
+  background:
+    linear-gradient(180deg, rgba(255,236,180,.07), rgba(0,0,0,.28) 38%, rgba(0,0,0,.42)),
+    linear-gradient(180deg, #2b2418, #191309 60%, #120d06);
+  border:1px solid #6d5832;
+  box-shadow: inset 0 1px 0 rgba(255,225,150,.16), inset 0 -1px 0 rgba(0,0,0,.65), 0 4px 18px rgba(0,0,0,.55);
+}
+
+/* ---------- общие ---------- */
+.btn { cursor:pointer; background:linear-gradient(#4a3d22,#2b2212); color:#f4e8c2; border:1px solid #85693a;
+  border-radius:4px; padding:8px 14px; font-size:14px; letter-spacing:.5px;
+  box-shadow: inset 0 1px 0 rgba(255,230,170,.18), 0 2px 6px rgba(0,0,0,.5); }
+.btn:hover { background:linear-gradient(#5d4b28,#382c14); border-color:#b3904e; color:#fff3d0; }
+.btn.big { font-size:20px; padding:14px 34px; border-radius:5px; font-weight:700; letter-spacing:1px;
+  background:linear-gradient(#6d5528 0%, #40300f 100%); }
+.btn.big:hover { background:linear-gradient(#7d622f 0%, #4a3812 100%); }
+.btn.small { font-size:12px; padding:4px 10px; }
+.btn:disabled { opacity:.45; cursor:default; }
+.pe { pointer-events:auto; }
+
+/* ---------- сообщения (килл-фид) ---------- */
+#msglog { position:fixed; top:96px; left:14px; z-index:30; display:flex; flex-direction:column; gap:5px; pointer-events:none; }
+#msglog .msg { background:linear-gradient(90deg, rgba(20,15,8,.9), rgba(12,10,6,.78));
+  border:1px solid #574626; border-left:3px solid #e8c56a;
+  padding:6px 12px; border-radius:3px; font-size:13px; max-width:400px;
+  box-shadow:0 2px 8px rgba(0,0,0,.45);
+  animation:msgin .25s ease-out, msgout .5s ease-in 5.5s forwards; }
+#msglog .msg.good { border-left-color:#7fca68; }
+#msglog .msg.bad  { border-left-color:#d95840; }
+@keyframes msgin { from { opacity:0; transform:translateX(-14px); } to { opacity:1; transform:none; } }
+@keyframes msgout { to { opacity:0; } }
+
+/* ---------- верхний счёт-борд ---------- */
+#topbar { position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:20; text-align:center;
+  pointer-events:none; border-radius:4px; padding:6px 20px 8px; min-width:360px; }
+#scoregrp { display:flex; align-items:center; justify-content:center; gap:14px; }
+#timer { font-size:24px; font-weight:800; color:#f4e8c2; letter-spacing:1px; text-shadow:0 2px 5px #000; }
+.tcrest { font-size:17px; filter:drop-shadow(0 2px 3px #000); }
+.ancrow { margin-top:3px; display:flex; align-items:center; gap:8px; font-size:10px; letter-spacing:1.5px; }
+.anclab { color:#b9a986; text-shadow:0 1px 2px #000; font-weight:700; }
+.anclab.rad { color:#9fd88f; }
+.anclab.dire { color:#ff9d8a; }
+.anclab.mid { color:#f4d689; font-size:14px; letter-spacing:.5px; padding:0 4px; }
+.ancbar { width:170px; height:8px; background:rgba(0,0,0,.68); border:1px solid #57492c; border-radius:2px; overflow:hidden;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.7); }
+.ancfill { height:100%; width:100%; transition:width .2s; }
+.ancbar.rad .ancfill { background:linear-gradient(90deg,#2f7c3a,#82d973); }
+.ancbar.dire .ancfill { background:linear-gradient(90deg,#9e3428,#ff8672); }
+
+/* ---------- правая сводка ---------- */
+#kda { position:fixed; top:10px; right:14px; z-index:20; text-align:right; pointer-events:none;
+  border-radius:4px; padding:8px 14px; font-size:13px; min-width:170px; }
+#kda .kdaline { margin:2px 0; color:#cabf9f; letter-spacing:.5px; }
+#kda span { color:#f4d689; font-weight:700; }
+
+/* ---------- нижняя панель (главный HUD) ---------- */
+#bottombar { position:fixed; bottom:0; left:50%; transform:translateX(-50%); z-index:20; pointer-events:none;
+  display:flex; align-items:stretch; border-radius:10px 10px 0 0; padding:0; min-width:760px; }
+#bottombar .wing { width:34px; position:relative; pointer-events:none;
+  background:linear-gradient(180deg, rgba(255,236,180,.1), rgba(0,0,0,.3)), linear-gradient(180deg,#241d10,#120d06);
+  border:1px solid #6d5832; box-shadow:inset 0 1px 0 rgba(255,225,150,.14); }
+#bottombar .wing.left  { border-right:none; border-radius:10px 0 0 0; }
+#bottombar .wing.right { border-left:none;  border-radius:0 10px 0 0; }
+#bottombar .wing::after { content:''; position:absolute; inset:8px auto auto 50%; width:14px; height:14px; transform:translateX(-50%);
+  background:radial-gradient(circle, rgba(240,214,137,.5), transparent 70%); }
+#bottombar .core { display:flex; align-items:center; gap:12px; padding:10px 16px 12px; }
+
+#portrait { position:relative; width:74px; height:74px; border-radius:6px; overflow:visible;
+  background:linear-gradient(160deg,#2c5cb4 0%, #123058 70%, #0b1e38 100%);
+  border:2px solid #a07c3e; box-shadow:inset 0 0 12px rgba(0,0,0,.55), 0 0 10px rgba(0,0,0,.6);
+  display:flex; align-items:center; justify-content:center; font-size:36px; font-weight:800; color:#dff0ff;
+  text-shadow:0 2px 4px #000; }
+#lvlring { position:absolute; right:-9px; bottom:-9px; width:52px; height:21px; border-radius:11px;
+  background:linear-gradient(#5d4a20,#2c230d); border:1px solid #b3924e;
+  display:flex; align-items:center; justify-content:center; box-shadow:0 2px 5px rgba(0,0,0,.6); }
+#lvltag { font-size:10px; color:#ffefc2; font-weight:700; letter-spacing:.5px; }
+
+#statscol { width:190px; }
+#heroname { font-size:12px; color:#d8e4f2; letter-spacing:.5px; margin-bottom:3px; text-shadow:0 1px 2px #000; }
+.bar { position:relative; height:22px; background:rgba(0,0,0,.72); border:1px solid #57492c; border-radius:3px; overflow:hidden; margin-top:4px;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.7); }
+.bar > div { height:100%; width:100%; transition:width .12s linear; }
+.bar.hp > div { background:linear-gradient(90deg,#2c6e2f,#7ed46b); }
+.bar.mp > div { background:linear-gradient(90deg,#1d4d99,#4fa8ef); }
+.bar span { position:absolute; inset:0; font-size:11px; line-height:21px; text-align:center; color:#fff;
+  text-shadow:0 1px 2px #000; font-weight:600; }
+
+#abils { display:flex; gap:7px; padding:0 4px; }
+.slot { position:relative; width:60px; height:60px; background:linear-gradient(180deg,#221a0e,#14100a);
+  border:2px solid #5e4c28; border-radius:5px; overflow:hidden; cursor:pointer;
+  box-shadow:inset 0 1px 0 rgba(255,225,150,.12), 0 2px 6px rgba(0,0,0,.5); }
+.slot:hover { border-color:#b3904e; }
+.slot .icn { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:29px; filter:drop-shadow(0 2px 2px #000); }
+.slot .key { position:absolute; top:1px; left:4px; font-size:10px; color:#f4d689; font-weight:800; text-shadow:0 1px 2px #000; }
+.slot .cost { position:absolute; bottom:1px; right:5px; font-size:10px; color:#8fc0ff; font-weight:700; text-shadow:0 1px 2px #000; }
+.slot .cdov { position:absolute; left:0; top:0; width:100%; height:0; background:rgba(2,4,7,.78); pointer-events:none; }
+.slot .cdnum { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:18px; font-weight:800; color:#fff; text-shadow:0 1px 3px #000; pointer-events:none; }
+.slot .lock { position:absolute; inset:0; background:rgba(12,9,4,.72); display:none; align-items:center;
+  justify-content:center; font-size:10px; color:#e6d6ae; pointer-events:none; letter-spacing:.5px; }
+.slot.locked .lock { display:flex; }
+.slot.noman { border-color:#3b5c8f; }
+.slot.noman::after { content:''; position:absolute; inset:0; background:rgba(35,70,170,.38); pointer-events:none; }
+
+#rightcol { width:220px; padding-left:6px; }
+#items { display:grid; grid-template-columns:repeat(3, 34px); gap:5px; justify-content:end; margin-bottom:8px; }
+.islot { width:34px; height:34px; background:linear-gradient(180deg,#241c10,#150f08); border:1px solid #5e4c28; border-radius:3px;
+  display:flex; align-items:center; justify-content:center; font-size:17px; position:relative;
+  box-shadow:inset 0 1px 0 rgba(255,225,150,.1); }
+.islot .cnt { position:absolute; bottom:-2px; right:1px; font-size:9px; color:#f4d689; font-weight:800; text-shadow:0 1px 2px #000; }
+#goldbar { display:flex; align-items:center; justify-content:flex-end; gap:7px; font-size:16px; }
+#goldbar .coin { filter:drop-shadow(0 1px 2px #000); font-size:17px; }
+#gold { color:#f4d689; font-weight:800; min-width:44px; text-align:right; text-shadow:0 1px 3px #000; }
+
+/* ---------- хинт ---------- */
+#hint { position:fixed; top:78px; right:14px; z-index:18; font-size:10.5px; line-height:1.55; color:#a89a7c;
+  background:rgba(10,8,4,.55); padding:5px 9px; border-radius:3px; border:1px solid rgba(109,88,50,.5);
+  pointer-events:none; max-width:250px; text-align:right; }
+
+/* ---------- миникарта в раме ---------- */
+#mmwrap { position:fixed; bottom:112px; left:12px; z-index:20; border:2px solid #6d5832; border-radius:6px; padding:4px;
+  background:linear-gradient(180deg,#241d10,#130e05); box-shadow:0 4px 18px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,225,150,.12); }
+#mm { display:block; border:1px solid #55482c; border-radius:3px; background:#1c2a1a; cursor:pointer; }
+.mmcorner { position:absolute; width:12px; height:12px; border-color:#ccab62; border-style:solid; border-width:0; pointer-events:none; }
+.mmcorner.tl { top:-2px; left:-2px;  border-top-width:2px; border-left-width:2px; border-top-left-radius:5px; }
+.mmcorner.tr { top:-2px; right:-2px; border-top-width:2px; border-right-width:2px; border-top-right-radius:5px; }
+.mmcorner.bl { bottom:-2px; left:-2px;  border-bottom-width:2px; border-left-width:2px; border-bottom-left-radius:5px; }
+.mmcorner.br { bottom:-2px; right:-2px; border-bottom-width:2px; border-right-width:2px; border-bottom-right-radius:5px; }
+
+/* ---------- магазин ---------- */
+#shop { position:fixed; right:190px; top:50%; transform:translateY(-50%); z-index:40; width:310px;
+  border-radius:8px; padding:12px; display:none; box-shadow:0 10px 34px rgba(0,0,0,.65); }
+#shop.open { display:block; animation:msgin .2s ease-out; }
+#shoph { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; letter-spacing:1.5px;
+  color:#f4d689; font-weight:800; font-size:15px; text-shadow:0 1px 3px #000; }
+.sitem { display:flex; gap:10px; align-items:center; background:linear-gradient(180deg,rgba(48,38,20,.55),rgba(22,17,9,.45));
+  border:1px solid #4c3d20; border-radius:4px; padding:8px 10px; margin-bottom:7px; }
+.sitem .sic { font-size:24px; width:34px; text-align:center; filter:drop-shadow(0 1px 2px #000); }
+.sitem .sinfo { flex:1; }
+.sitem .sname { font-size:13px; font-weight:700; color:#efe6c9; }
+.sitem .sdesc { font-size:11px; color:#a39372; }
+.sitem .sprice { font-size:12px; color:#f4d689; font-weight:800; }
+.sitem .ok { color:#8fdd7f; font-size:11px; }
+#shopnote { font-size:10px; color:#8d7f60; margin-top:6px; text-align:center; }
+
+/* ---------- выбор героя ---------- */
+#heropick { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:470px; margin:0 auto 18px; }
+.hcard { cursor:pointer; padding:10px 8px 9px; border-radius:6px; text-align:center;
+  background:linear-gradient(180deg, rgba(58,46,24,.55), rgba(20,15,8,.55));
+  border:1px solid #4c3d20; transition:border-color .15s, box-shadow .15s; }
+.hcard:hover { border-color:#b3904e; }
+.hcard.sel { border-color:#e8c56a; box-shadow:0 0 16px rgba(232,197,106,.35), inset 0 0 12px rgba(232,197,106,.12);
+  background:linear-gradient(180deg, rgba(90,68,26,.6), rgba(30,22,10,.6)); }
+.hcard .hic { font-size:30px; filter:drop-shadow(0 2px 3px #000); }
+.hcard .hn { font-size:15px; font-weight:800; color:#f4e8c2; margin-top:3px; letter-spacing:.5px; }
+.hcard .ht { font-size:10px; color:#c0ab7c; letter-spacing:.5px; margin-top:1px; }
+.hcard .hr { font-size:10px; color:#93835f; margin-top:1px; }
+.hcard .ha { font-size:13px; letter-spacing:3px; margin-top:5px; }
+
+/* ---------- оверлеи состояний ---------- */
+#deathoverlay { position:fixed; inset:0; z-index:45; display:none; align-items:center; justify-content:center;
+  background:radial-gradient(ellipse at center, rgba(120,15,10,.34), rgba(10,2,2,.5)); pointer-events:none; }
+#deathtext { font-size:44px; font-weight:900; color:#ffd7d0; text-shadow:0 0 18px #a00, 0 3px 8px #000; text-align:center; line-height:1.35; letter-spacing:2px; }
+#pauseoverlay { position:fixed; inset:0; z-index:46; display:none; align-items:center; justify-content:center;
+  flex-direction:column; gap:8px; background:rgba(4,5,8,.6); font-size:52px; font-weight:900; color:#f4e8c2;
+  letter-spacing:6px; text-shadow:0 0 26px rgba(232,197,106,.3); pointer-events:none; }
+#pauseoverlay small { font-size:16px; font-weight:400; color:#aebccd; letter-spacing:1px; }
+
+/* ---------- стартовый / финальный экран ---------- */
+#startscreen { position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center;
+  background:
+    radial-gradient(1100px 620px at 50% 0%, rgba(214,170,60,.16), transparent 60%),
+    radial-gradient(1600px 900px at 50% 110%, rgba(120,30,15,.14), transparent 60%),
+    rgba(5,6,9,.86); pointer-events:auto; }
+#endscreen { position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center;
+  background:
+    radial-gradient(1100px 620px at 50% 0%, rgba(214,170,60,.16), transparent 60%),
+    rgba(5,6,9,.86); pointer-events:auto; }
+#startscreen .sub, #endscreen .sub { color:#d6b56a; font-size:15px; letter-spacing:3px; margin:2px 0 18px; }
+#crest { font-size:44px; filter:drop-shadow(0 4px 10px rgba(214,170,60,.4)); margin-bottom:-6px; }
+#startcard { text-align:center; position:relative; padding:36px 48px 30px; border-radius:8px;
+  background:
+    linear-gradient(180deg, rgba(255,236,180,.08), rgba(0,0,0,.3) 40%, rgba(0,0,0,.5)),
+    linear-gradient(180deg, #241d12, #171106 65%, #100b04);
+  border:1px solid #7a6333; box-shadow: inset 0 1px 0 rgba(255,228,160,.2), 0 0 70px rgba(0,0,0,.75); }
+#startcard::before, #startcard::after { content:''; position:absolute; top:10px; bottom:10px; width:1px;
+  background:linear-gradient(180deg, transparent, rgba(204,171,98,.65), transparent); }
+#startcard::before { left:14px; }
+#startcard::after  { right:14px; }
+#startscreen h1, #endscreen h1 { font-size:78px; font-weight:900; letter-spacing:7px; line-height:1;
+  background:linear-gradient(#fff4d2,#e8c56a 52%,#8a6824); -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 3px 4px rgba(0,0,0,.8)); }
+#ctrltable { display:grid; grid-template-columns:auto auto; gap:7px 16px; margin:0 auto 20px; width:440px; text-align:left; }
+#ctrltable div { font-size:13px; color:#cbc4ae; }
+#ctrltable b { color:#f4d689; margin-right:10px; display:inline-block; min-width:64px; font-size:12px; letter-spacing:.5px; }
+.fine { margin-top:16px; font-size:12px; color:#8d8570; line-height:1.65; }
+#endstats { margin:8px 0 22px; font-size:16px; color:#e2e6ec; line-height:2; }
+#endstats b { color:#f4d689; }
+#endtitle.win { background:linear-gradient(#eaffdd,#8fe88f 52%,#2a7a3a); -webkit-background-clip:text; background-clip:text; }
+#endtitle.lose { background:linear-gradient(#ffdede,#ff8f8f 52%,#8a2a2a); -webkit-background-clip:text; background-clip:text; }
+
+/* ---------- боевые баннеры по центру ---------- */
+#banner { position:fixed; top:118px; left:50%; transform:translateX(-50%) scale(0.85);
+  z-index:25; font-size:36px; font-weight:900; letter-spacing:2.5px; color:#ffe9b0; white-space:nowrap;
+  text-shadow:0 2px 0 #191008, 0 0 26px rgba(232,197,106,.5), 0 8px 22px rgba(0,0,0,.85);
+  opacity:0; pointer-events:none; transition:opacity .3s, transform .4s cubic-bezier(.2,1.6,.4,1); }
+#banner.show { opacity:1; transform:translateX(-50%) scale(1); }
+#banner.bad { color:#ffac98;
+  text-shadow:0 2px 0 #180a08, 0 0 26px rgba(255,120,90,.5), 0 8px 22px rgba(0,0,0,.85); }

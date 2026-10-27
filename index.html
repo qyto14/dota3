@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DOTA 3 — мини-MOBA в 3D</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="vignette"></div>
+<div id="msglog"></div>
+
+<!-- ==== Дотовский счёт-борд сверху ==== -->
+<div id="topbar">
+  <div id="scoregrp">
+    <span class="tcrest rad">🟢</span>
+    <span id="timer">0:00</span>
+    <span class="tcrest dire">🔴</span>
+  </div>
+  <div id="ancbars">
+    <div class="ancrow">
+      <span class="anclab rad">СВЕТ</span>
+      <div class="ancbar rad"><div id="anc0" class="ancfill"></div></div>
+      <span class="anclab mid" id="score">0 : 0</span>
+      <div class="ancbar dire"><div id="anc1" class="ancfill"></div></div>
+      <span class="anclab dire">СУМРАК</span>
+    </div>
+  </div>
+</div>
+
+<!-- ==== Баннер события (первая кровь, башня, Рошан) ==== -->
+<div id="banner"></div>
+
+<!-- ==== Правая сводка (K/LH/крипы) ==== -->
+<div id="kda">
+  <div class="kdaline">Добивания: <span id="lh">0</span></div>
+  <div class="kdaline">День/ночь: <span id="tod">☀️</span></div>
+  <div class="kdaline">ФПС: <span id="fps">—</span></div>
+</div>
+
+<!-- ==== Нижняя панель как в доте ==== -->
+<div id="bottombar">
+  <div class="wing left"></div>
+  <div class="core">
+    <div id="portrait"><span id="pletter">А</span><div id="lvlring"><span id="lvltag">ур. 1</span></div></div>
+    <div id="statscol">
+      <div id="heroname">Аркадий</div>
+      <div class="bar hp"><div id="hpfill"></div><span id="hptext">620/620</span></div>
+      <div class="bar mp"><div id="mpfill"></div><span id="mptext">300/300</span></div>
+    </div>
+    <div id="abils"></div>
+    <div id="rightcol">
+      <div id="items"></div>
+      <div id="goldbar"><span class="coin">🪙</span><span id="gold">650</span><button id="shopbtn" class="btn small">Магазин (B)</button></div>
+    </div>
+  </div>
+  <div class="wing right"></div>
+</div>
+
+<div id="hint">WASD — бег · ЛКМ/ПКМ — приказы · Q/Space/E/R — способности · T — свиток ТП · X — стоп · B — магазин · F1 — камера к герою · F — закрепить · края экрана / СКМ — камера</div>
+
+<div id="mmwrap"><canvas id="mm" width="170" height="170"></canvas><div class="mmcorner tl"></div><div class="mmcorner tr"></div><div class="mmcorner bl"></div><div class="mmcorner br"></div></div>
+
+<div id="shop">
+  <div id="shoph"><span>⚒ ЛАВКА АРКАДИЯ</span><button id="shopclose" class="btn small">✕</button></div>
+  <div id="shopitems"></div>
+  <div id="shopnote">Золото капает само и за убийства. Смерть статов не отбирает.</div>
+</div>
+
+<div id="deathoverlay"><div id="deathtext">ВОЗРОЖДЕНИЕ<br>ЧЕРЕЗ <span id="resptime">5</span> с.</div></div>
+<div id="pauseoverlay">ПАУЗА<small>нажми P, чтобы продолжить</small></div>
+
+<div id="startscreen">
+  <div id="startcard">
+    <div class="crest">✦</div>
+    <h1>DOTA 3</h1>
+    <div class="sub">мини-MOBA · 3D · ты против лорда Моркуса</div>
+    <div id="heropick"></div>
+    <div id="ctrltable">
+      <div><b>WASD</b><span>бег героя (стрелки тоже работают)</span></div>
+      <div><b>ЛКМ / ПКМ</b><span>идти к точке · клик по врагу — атаковать</span></div>
+      <div><b>Q / 1 · SPC / 2 · E / 3 · R / 4</b><span>способности героя — у каждого свой набор!</span></div>
+      <div><b>T</b><span>свиток телепорта к трону</span></div>
+      <div><b>X / B / P / M</b><span>стоп / магазин / пауза / звук</span></div>
+      <div><b>🎥 Камера</b><span>свободная: края экрана двигают · СКМ — тащить · колесо — зум · миникарта — прыжок · F1 — к герою · F — закрепить</span></div>
+    </div>
+    <button id="startbtn" class="btn big">НАЧАТЬ БИТВУ</button>
+    <div class="fine">Цель: снести две башни врага и уничтожить Трон сумрака.<br>
+    В джунглях бродят нейтральные кемпы — бей их ради золота и опыта.<br>
+    У своего трона здоровье и мана восстанавливаются сами.</div>
+  </div>
+</div>
+
+<div id="endscreen">
+  <div id="startcard">
+    <h1 id="endtitle">ПОБЕДА</h1>
+    <div id="endstats"></div>
+    <button id="againbtn" class="btn big">Играть снова</button>
+  </div>
+</div>
+
+<script src="three.min.js" onerror="var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';document.head.appendChild(s);"></script>
+<script src="game.js"></script>
+</body>
+</html>
